@@ -394,11 +394,14 @@ async function addPolygonAttachToZipWriter(zipWriter, attachDir, testDir, proble
             window.overlayThrowIfAborted(abortSignal);
         }
         const imgs = await MakeAttachFiles(entries, problem.statement_entry, problem.attach_files);
+        const addedAttachNames = new Set();
         for (let i = 0; i < imgs.length; i++) {
             if (typeof window.overlayThrowIfAborted === "function") {
                 window.overlayThrowIfAborted(abortSignal);
             }
             const file = imgs[i];
+            if (addedAttachNames.has(file.filename)) continue;
+            addedAttachNames.add(file.filename);
             await zipWriter.add(`${attachDir}/${file.filename}`, new zip.BlobReader(file.content));
             added = true;
         }
@@ -960,7 +963,9 @@ function applyReplaceGraphics(projson, attach_hash, attach_files) {
             if (!p1.startsWith("http")) {
                 const trimmedPath = p1.replace(/^(\.\/|\\)+|(\.\/|\\)+$/g, "");
                 if (!trimmedPath.includes("/") && !trimmedPath.includes("\\")) {
-                    attach_files.push(trimmedPath);
+                    if (attach_files.indexOf(trimmedPath) === -1) {
+                        attach_files.push(trimmedPath);
+                    }
                     return match.replace(p1, `${prefix}${trimmedPath}`);
                 }
             }
